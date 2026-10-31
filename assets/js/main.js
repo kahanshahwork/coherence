@@ -3,37 +3,50 @@
 var $=function(s,r){return (r||document).querySelector(s)};
 var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ---------- The mark: three lights drift, pull onto one ring, hold, then spring apart again, forever ---------- */
+/* ---------- The mark: three lights wander in chaos, slowly pull onto one ring, hold, then spring apart quickly, forever ---------- */
 (function(){
   var cv=$('#ring'),mark=$('#mark'),c=cv.getContext('2d'),DPR=Math.min(window.devicePixelRatio||1,2),S=0;
   function size(){var r=cv.getBoundingClientRect();S=r.width||300;cv.width=Math.round(S*DPR);cv.height=Math.round(S*DPR)}
   size();addEventListener('resize',size);
 
-  /* one cycle, in seconds: drift apart, pull together, hold as one ring, spring apart */
-  var A=1.4,M=1.3,H=1.1,Sp=.8,P=A+M+H+Sp,N=200,TAU=6.2832;
+  /* one cycle, in seconds. M (tangled to unified) is the slow part; Sp (unified to tangled) is the quick part. */
+  var A=1.4,M=3.0,H=1.1,Sp=.8,P=A+M+H+Sp,N=200,TAU=6.2832;
   function clamp01(x){return x<0?0:x>1?1:x}
-  function inOut(x){x=clamp01(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2}
+  function inOut(x){x=clamp01(x);return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
   function outBack(x){x=clamp01(x);var c1=1.6,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)}
-  /* separation: 1 = three rings apart, 0 = one ring. It can overshoot 1 a little on the spring back. */
+  function rnd(a,b){return a+Math.random()*(b-a)}
+  function sign(){return Math.random()<.5?-1:1}
+  /* separation: 1 = three rings tangled apart, 0 = one ring. It overshoots 1 a little on the spring back. */
   function sepAt(tc){
     if(tc<A)return 1;
     if(tc<A+M)return 1-inOut((tc-A)/M);
     if(tc<A+M+H)return 0;
     return outBack((tc-A-M-H)/Sp);
   }
-  /* each light: colour, three gentle waves (harmonic, size, speed), where it drifts when apart */
-  var L=[
-    {col:'90,169,224', w:[[2,.095,.9],[3,.060,-1.3],[5,.034,1.9]], ph:[0,1.3,2.6], dx:.7, dy:.55, pa:0.0, r:-1},
-    {col:'240,138,60', w:[[2,.090,-1.1],[4,.058,1.5],[5,.030,-2.1]], ph:[2.2,.4,4.1], dx:.55, dy:.8, pa:2.1, r:0},
-    {col:'230,189,107',w:[[3,.092,1.0],[2,.056,-1.6],[4,.032,2.3]], ph:[4.0,3.1,.9], dx:.8, dy:.62, pa:4.2, r:1}
-  ];
-  var T=0,last=performance.now(),raf=0,vis=true;
+  var COLS=['90,169,224','240,138,60','230,189,107'];
+  var L=COLS.map(function(col){return {col:col}});
+  /* Give every light a fresh random character: its waves, where it wanders, how it stretches and tilts.
+     Called once per cycle while the rings are one, so the change is invisible. */
+  function roll(){
+    L.forEach(function(g){
+      var hs=[2,3,4,5,6,7],h=[],k;
+      for(k=0;k<3;k++)h.push(hs.splice(Math.floor(Math.random()*hs.length),1)[0]);
+      h.sort(function(x,y){return x-y});
+      g.w=[[h[0],rnd(.07,.125),sign()*rnd(.5,1.7)],[h[1],rnd(.05,.095),sign()*rnd(.8,2.3)],[h[2],rnd(.03,.065),sign()*rnd(1.2,2.8)]];
+      g.ph=[rnd(0,TAU),rnd(0,TAU),rnd(0,TAU)];
+      g.dx=rnd(.35,1.3);g.dy=rnd(.35,1.3);g.pa=rnd(0,TAU);g.pb=rnd(0,TAU);
+      g.da=rnd(.075,.125);               /* how far it wanders */
+      g.r=rnd(-.13,.13);                 /* its size against the others */
+      g.ex=rnd(.86,1.16);g.ey=rnd(.86,1.16);g.rot=rnd(0,TAU);g.rs=sign()*rnd(.15,.55);
+    });
+  }
+  roll();
+  var T=0,last=performance.now(),raf=0,vis=true,rolledFor=-1;
 
   function path(ctx,g,R,cx,cy,sep,u,breath,off,sp,amp,ph0){
-    /* strands of one light: same shape, nudged apart by `sp` so they read as a soft band */
-    var j,i,a,r,th,k,x,y;
+    var j,i,k,th,r,x,y,ang=g.rot+g.rs*T,ca=Math.cos(ang),sa=Math.sin(ang),ex=1+(g.ex-1)*sep,ey=1+(g.ey-1)*sep;
     for(j=0;j<off.length;j++){
-      var d=off[j]*sp,pj=ph0*j*.35*sep;
+      var d=off[j]*sp,pj=ph0*j*.5*sep;
       for(i=0;i<=N;i++){
         th=i/N*TAU;
         var wob=0;
@@ -41,31 +54,32 @@ var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
         /* the shared breath keeps all three exactly together once they are one */
         var common=.012*Math.sin(3*th+T*1.1)+.008*Math.sin(5*th-T*.9);
         r=R*(1+breath)+d+R*wob*amp*(1+off[j]*.05)+R*common*u;
-        x=cx+Math.cos(th)*r;y=cy+Math.sin(th)*r;
+        var px=Math.cos(th)*r*ex,py=Math.sin(th)*r*ey;
+        x=cx+px*ca-py*sa;y=cy+px*sa+py*ca;
         if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);
       }
     }
   }
 
   function draw(){
-    var tc=T%P,sep=reduce?0:sepAt(tc),u=clamp01(1-sep);
+    var tc=T%P,cyc=Math.floor(T/P);
+    if(!reduce&&tc>=A+M+.05&&rolledFor!==cyc){roll();rolledFor=cyc}
+    var sep=reduce?0:sepAt(tc),u=clamp01(1-sep);
     var tm=tc-(A+M),flash=reduce?0:Math.exp(-Math.pow(tm/.2,2)),hold=(tc>=A+M&&tc<A+M+H)?Math.sin(Math.PI*(tc-A-M)/H):0;
-    var R=S*.335,cx=S/2,cy=S/2,breath=.014*hold*(reduce?0:1);
+    var U=S/1.36,R=U*.32,cx=S/2,cy=S/2,breath=.014*hold*(reduce?0:1);
     c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,S,S);
     c.globalCompositeOperation='lighter';c.lineJoin='round';c.lineCap='round';
-    var amp=sep>0?Math.min(sep,1.15):0;            /* waves shrink to nothing as the lights become one */
-    var spread=R*(.010+.016*clamp01(sep));         /* strands tighten into a single line */
+    var amp=sep>0?Math.min(sep,1.15):0;
+    var spread=R*(.010+.022*clamp01(sep));
     L.forEach(function(g,n){
-      var ox=Math.sin(T*g.dx+g.pa)*S*.05*sep,oy=Math.cos(T*g.dy+g.pa*.7)*S*.05*sep;
-      var rr=R*(1+g.r*.075*sep);
-      /* soft outer strands */
+      /* wanders on two unrelated rhythms so the path never repeats; calms as sep falls */
+      var ox=(Math.sin(T*g.dx+g.pa)+.45*Math.sin(T*g.dx*2.3+g.pb))*U*g.da*sep,oy=(Math.cos(T*g.dy+g.pb)+.45*Math.cos(T*g.dy*1.9+g.pa))*U*g.da*sep;
+      var rr=R*(1+g.r*sep);
       c.beginPath();path(c,g,rr,cx+ox,cy+oy,sep,u,breath,[-2,2],spread,amp,n+1);
-      c.strokeStyle='rgba('+g.col+','+(.34).toFixed(2)+')';c.lineWidth=1;c.shadowBlur=0;c.stroke();
-      /* bright core strands with a glow */
+      c.strokeStyle='rgba('+g.col+',.34)';c.lineWidth=1;c.shadowBlur=0;c.stroke();
       c.beginPath();path(c,g,rr,cx+ox,cy+oy,sep,u,breath,[-1,0,1],spread,amp,n+1);
       c.strokeStyle='rgba('+g.col+','+(.78-.22*u).toFixed(2)+')';c.lineWidth=1.25;c.shadowColor='rgba('+g.col+',.95)';c.shadowBlur=12+8*u;c.stroke();
     });
-    /* once they are one, the ring blooms white-gold; a brief flash marks the moment they meet */
     var bloom=u*u*u*.5+flash*u*.55;
     if(bloom>.01){
       c.beginPath();c.arc(cx,cy,R*(1+breath),0,TAU);
