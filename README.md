@@ -1,18 +1,29 @@
-# Coherence Tech site
+# Coherence Tech link board
 
-One-page showcase for **Coherence Tech**: the brand film, how we think, our work (ParaIQ) and the ParaIQ product deck.
-A plain static site (HTML, CSS, JavaScript). No build step, nothing to install.
+This is **not a website**. It is a link board: the Coherence Tech mark (three lights that keep merging into one ring
+and rising apart again, with the name held inside) and three links.
+Nothing else on the page.
+
+- **Watch the film** opens the film in a full-screen overlay.
+- **ParaIQ** opens https://www.paraiq.site in a new tab.
+- **Connect with us** opens a small card with the email address, an Email us button and a Copy button.
 
 ## Structure
 
 ```
-index.html               Page markup
-assets/css/styles.css    All styles (colours are at the top)
-assets/js/main.js        Hero ring animation, reveals, deck viewer, copy button
-assets/video/            coherence-film.mp4 (compressed) and poster.jpg
-assets/deck/             slide-01.jpg ... slide-18.jpg and ParaIQ-Product-Deck.pdf
-vercel.json              Vercel settings (headers and caching)
+index.html               The board
+assets/css/styles.css    Styles (brand colours at the top)
+assets/js/main.js        The ring animation and the two overlays
+assets/video/            coherence-film.mp4 and poster.jpg
+vercel.json              Vercel settings
 ```
+
+## Common edits
+
+- **Add or change a link:** copy one `<a class="link">` block in `index.html` (for links to other sites) and change the label and address.
+- **Animation speed:** in `assets/js/main.js`, `var P=11` is the length of one cycle in seconds.
+- **Contact address:** search for `paraiq.app@gmail.com` in `index.html`.
+- **Film:** replace `assets/video/coherence-film.mp4` and `poster.jpg`, keeping the names.
 
 ## Run locally
 
@@ -20,26 +31,6 @@ vercel.json              Vercel settings (headers and caching)
 python -m http.server 8080
 ```
 
-Open http://localhost:8080.
+## Deploy
 
-## Deploy (GitHub, then Vercel)
-
-1. Push this folder to a new GitHub repository.
-2. In Vercel: **Add New, Project**, import the repository, framework preset **Other**, then **Deploy**.
-3. Every push to the main branch goes live on its own. A custom domain can be added later under **Settings, Domains**.
-
-## Common edits
-
-- **Film:** replace `assets/video/coherence-film.mp4` (and `poster.jpg`) keeping the names.
-  Compress long videos first (about 6 MB for 2.5 minutes works well on phones).
-- **Deck:** the viewer shows `slide-01.jpg` to `slide-18.jpg`. For a deck with a different number of slides,
-  export new images with the same naming and change `var N=18` in `assets/js/main.js` and the "eighteen slides" heading.
-  Update the PDF in `assets/deck/` for the Download button.
-- **Contact address:** search for `paraiq.app@gmail.com` in `index.html`.
-- **Colours:** the three brand lights are `--blue`, `--orange` and `--gold` at the top of `assets/css/styles.css`.
-- **More products or case studies:** copy the `<article class="proj">` block in `index.html`.
-
-## Before going public
-
-- Make sure you have the rights to everything shown in the film (footage, music, voice).
-- Replace the contact email with a Coherence Tech address when you have one.
+Push to GitHub, then in Vercel choose **Add New, Project**, import the repository, framework preset **Other**, **Deploy**.

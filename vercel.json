@@ -9,7 +9,7 @@
       ]
     },
     {
-      "source": "/assets/(video|deck)/(.*)",
+      "source": "/assets/video/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=604800" }
       ]
