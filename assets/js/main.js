@@ -3,17 +3,17 @@
 var $=function(s,r){return (r||document).querySelector(s)};
 var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ---------- The mark: many single rings of three colours wander at random inside one circle;
-   rings of the same colour then slowly gather, everything settles, and they become one ring.
+/* ---------- The mark: single rings of three colours, each fixed in place, spinning on its own axis with
+   free-form, ever-changing waves. Same colours then gather, everything settles, and they become one ring.
    The spring back to chaos is quick. ---------- */
 (function(){
   var cv=$('#ring'),mark=$('#mark'),c=cv.getContext('2d'),DPR=Math.min(window.devicePixelRatio||1,2),S=0;
   function size(){var r=cv.getBoundingClientRect();S=r.width||300;cv.width=Math.round(S*DPR);cv.height=Math.round(S*DPR)}
   size();addEventListener('resize',size);
 
-  /* one cycle, in seconds: A random wandering, M same colours gather then everything unifies and rests,
+  /* one cycle, in seconds: A free wandering shapes, M same colours gather then everything unifies and rests,
      H hold as one ring, Sp quick spring back to chaos */
-  var A=3.0,M=2.8,H=1.1,Sp=.8,P=A+M+H+Sp,N=160,TAU=6.2832,NR=15;
+  var A=3.0,M=2.8,H=1.1,Sp=.8,P=A+M+H+Sp,N=130,TAU=6.2832,NR=15,NH=5;
   function clamp01(x){return x<0?0:x>1?1:x}
   function sm(a,b,x){var t=clamp01((x-a)/(b-a));return t*t*(3-2*t)}
   function lerp(a,b,t){return a+(b-a)*t}
@@ -31,33 +31,46 @@ var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
   var COLS=['90,169,224','240,122,58','230,189,107'];       /* blue, red-orange, gold */
   var rings=[],groups=[];
-  function waves(amps){
-    var hs=[2,3,4,5,6,7],h=[],k;
-    for(k=0;k<3;k++)h.push(hs.splice(Math.floor(Math.random()*hs.length),1)[0]);
-    h.sort(function(x,y){return x-y});
-    return {h:h,a:[rnd(amps[0]*.6,amps[0]),rnd(amps[1]*.6,amps[1]),rnd(amps[2]*.6,amps[2])],sp:[sign()*rnd(.5,1.5),sign()*rnd(.8,2),sign()*rnd(1.1,2.5)],ph:[rnd(0,TAU),rnd(0,TAU),rnd(0,TAU)]};
+  /* A free-form wave: several random harmonics, each with its own drifting phase and a slowly
+     breathing strength, so the outline keeps changing into shapes nobody planned. */
+  function freeWave(amp){
+    var pool=[2,3,4,5,6,7,8,9],w={h:[],a:[],sp:[],ph:[],es:[],ep:[]},j;
+    for(j=0;j<NH;j++){
+      var h=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+      w.h.push(h);w.a.push(amp*rnd(.5,1)*(1.25-.1*h));w.sp.push(sign()*rnd(.4,2.2));w.ph.push(rnd(0,TAU));
+      w.es.push(rnd(.35,1.2));w.ep.push(rnd(0,TAU));
+    }
+    return w;
   }
-  /* New random rings every cycle (called while everything is one ring, so the change is invisible).
-     Sizes are spread across the circle and colours alternate through the sizes, so no two neighbours share a colour. */
+  /* New random rings every cycle (made while everything is one ring, so the change is invisible).
+     Sizes are spread across the circle and colours alternate through the sizes, so neighbours differ. */
   function roll(){
     var perm=shuffle([0,1,2]),k;
-    rings=[];
+    rings=[];Tm=0;
     for(k=0;k<NR;k++){
       var rf=Math.min(.95,.36+.59*k/(NR-1)+rnd(-.02,.02));
-      var w=waves([.10,.07,.045]);
-      rings.push({col:perm[k%3],rf:rf,w:w,dx:rnd(.35,1.3),dy:rnd(.35,1.3),pa:rnd(0,TAU),pb:rnd(0,TAU),
-        oaf:Math.max(0,1-rf*1.22)*rnd(.75,1),ex:rnd(.84,1.18),ey:rnd(.84,1.18),dl:rnd(-2.4,2.4)});
+      var oa=Rmaxf*Math.max(0,1-rf*1.25)*rnd(.7,1),oang=rnd(0,TAU);
+      rings.push({col:perm[k%3],rf:rf,w:freeWave(.085),ox:Math.cos(oang)*oa,oy:Math.sin(oang)*oa,
+        a0:rnd(0,TAU),rs:sign()*rnd(.12,.6),ex:rnd(.88,1.14),ey:rnd(.88,1.14)});
     }
     shuffle(rings);
     groups=COLS.map(function(col,i){
-      return {w:waves([.06,.04,.025]),dx:rnd(.3,.8),dy:rnd(.3,.8),pa:rnd(0,TAU),pb:rnd(0,TAU),ga:rnd(.12,.2),rf:.9+i*.1,ex:rnd(.95,1.08),ey:rnd(.95,1.08),rot:rnd(0,TAU),rs:sign()*rnd(.1,.35)};
+      var oang=rnd(0,TAU),oa=Rmaxf*rnd(.03,.07);
+      return {w:freeWave(.05),ox:Math.cos(oang)*oa,oy:Math.sin(oang)*oa,rf:.93+i*.07,ex:rnd(.96,1.06),ey:rnd(.96,1.06),a0:rnd(0,TAU),rs:sign()*rnd(.1,.3)};
     });
   }
+  var Rmaxf=.46,Tm=0;
   roll();
-  var T=0,Tm=0,last=performance.now(),raf=0,vis=true,rolledFor=-1;
-  var wg=[new Float32Array(N+1),new Float32Array(N+1),new Float32Array(N+1)];
+  var T=0,last=performance.now(),raf=0,vis=true,rolledFor=-1;
+  var wg=[new Float32Array(N+1),new Float32Array(N+1),new Float32Array(N+1)],wr=new Float32Array(N+1);
 
-  function waveAt(w,th,t){return w.a[0]*Math.sin(w.h[0]*th+w.ph[0]+w.sp[0]*t)+w.a[1]*Math.sin(w.h[1]*th+w.ph[1]+w.sp[1]*t)+w.a[2]*Math.sin(w.h[2]*th+w.ph[2]+w.sp[2]*t)}
+  /* fill out[i] with the wave's offset at every point of the outline, at time t */
+  var cA=new Float32Array(NH),cP=new Float32Array(NH);
+  function fillWave(w,t,out){
+    var j,i;
+    for(j=0;j<NH;j++){cA[j]=w.a[j]*(.45+.55*Math.sin(w.es[j]*t+w.ep[j]));cP[j]=w.ph[j]+w.sp[j]*t}
+    for(i=0;i<=N;i++){var th=i/N*TAU,v=0;for(j=0;j<NH;j++)v+=cA[j]*Math.sin(w.h[j]*th+cP[j]);out[i]=v}
+  }
 
   function draw(){
     var tc=T%P,cyc=Math.floor(T/P);
@@ -65,33 +78,28 @@ var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(reduce)setK(A+M+.01);else setK(tc);
     var u=clamp01(k2);
     var tm=tc-(A+M),flash=reduce?0:Math.exp(-Math.pow(tm/.2,2)),hold=(tc>=A+M&&tc<A+M+H)?Math.sin(Math.PI*(tc-A-M)/H):0;
-    var U=S/1.36,Rmax=U*.46,Ru=U*.30,cx=S/2,cy=S/2,breath=.014*hold*(reduce?0:1),i,g,r,n;
+    var U=S/1.36,Rmax=U*.46,Ru=U*.37,cx=S/2,cy=S/2,breath=.014*hold*(reduce?0:1),i,r;
     c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,S,S);
     c.globalCompositeOperation='lighter';c.lineJoin='round';c.lineCap='round';
 
-    /* each colour's gathering ring: its own gentle shape and slow drift */
-    var gs=groups.map(function(G,gi){
-      for(i=0;i<=N;i++)wg[gi][i]=waveAt(G.w,i/N*TAU,Tm);
-      return {x:(Math.sin(Tm*G.dx+G.pa)+.4*Math.sin(Tm*G.dx*2.1+G.pb))*Rmax*G.ga/1.4,y:(Math.cos(Tm*G.dy+G.pb)+.4*Math.cos(Tm*G.dy*1.9+G.pa))*Rmax*G.ga/1.4,
-              rad:Ru*G.rf,ang:G.rot+G.rs*Tm,ex:G.ex,ey:G.ey};
-    });
+    /* each colour's gathering ring: fixed in place, gentle free-form shape, slow spin */
+    for(var gi=0;gi<3;gi++)fillWave(groups[gi].w,Tm,wg[gi]);
 
     for(var ci=0;ci<3;ci++){
-      var core=new Path2D(),glow=new Path2D();
+      var core=new Path2D(),glow=new Path2D(),G=groups[ci];
       rings.forEach(function(R){
         if(R.col!==ci)return;
-        var Gs=gs[ci],oa=Rmax*R.oaf;
-        var ox=(Math.sin(Tm*R.dx+R.pa)+.45*Math.sin(Tm*R.dx*2.3+R.pb))*oa/1.45,oy=(Math.cos(Tm*R.dy+R.pb)+.45*Math.cos(Tm*R.dy*1.9+R.pa))*oa/1.45;
-        var rad=lerp(lerp(Rmax*R.rf,Gs.rad,k1),Ru,k2),
-            px0=lerp(ox,Gs.x,k1)*(1-k2),py0=lerp(oy,Gs.y,k1)*(1-k2),
-            ex=lerp(lerp(R.ex,Gs.ex,k1),1,k2),ey=lerp(lerp(R.ey,Gs.ey,k1),1,k2),
-            ang=Gs.ang+R.dl*(1-k1),ca=Math.cos(ang),sa=Math.sin(ang),calm=1-k2,
+        fillWave(R.w,Tm,wr);
+        var rad=lerp(lerp(Rmax*R.rf,Ru*G.rf,k1),Ru,k2),
+            px0=lerp(R.ox,G.ox,k1)*(1-k2),py0=lerp(R.oy,G.oy,k1)*(1-k2),
+            ex=lerp(lerp(R.ex,G.ex,k1),1,k2),ey=lerp(lerp(R.ey,G.ey,k1),1,k2),
+            ang=lerp(R.a0+R.rs*Tm,G.a0+G.rs*Tm,k1),ca=Math.cos(ang),sa=Math.sin(ang),calm=1-k2,
             pth=new Path2D();
         for(i=0;i<=N;i++){
-          var th=i/N*TAU,wi=waveAt(R.w,th,Tm),wob=lerp(wi,wg[ci][i],k1)*calm;
+          var th=i/N*TAU,wob=lerp(wr[i],wg[ci][i],k1)*calm;
           var common=(.012*Math.sin(3*th+T*1.1)+.008*Math.sin(5*th-T*.9))*u;
           r=rad*(1+wob+common+breath);
-          var x=Math.cos(th)*r*ex,y=Math.sin(th)*r*ey,X=cx+px0+x*ca-y*sa,Y=cy+py0+x*sa+y*ca;
+          var x=Math.cos(th)*r*ex,y=Math.sin(th)*r*ey,X=cx+px0*U+x*ca-y*sa,Y=cy+py0*U+x*sa+y*ca;
           if(i)pth.lineTo(X,Y);else pth.moveTo(X,Y);
         }
         pth.closePath();core.addPath(pth);glow.addPath(pth);
