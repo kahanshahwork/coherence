@@ -14,11 +14,11 @@ button{font:inherit;color:inherit}
 em{font-style:italic}
 :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 
-.board{overflow:clip;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(20px,4.5svh,44px);padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+.board{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(20px,4.5svh,44px);padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
 
 /* The mark: three lights that keep merging and rising apart, with the name held inside */
 .mark{--w:min(88vw,500px,48svh);position:relative;width:var(--w);height:var(--w);flex:none;--g:0}
-.mark canvas{position:absolute;left:-18%;top:-18%;width:136%;height:136%}
+.mark canvas{position:absolute;inset:0;width:100%;height:100%}
 .name{position:absolute;inset:0;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font:400 calc(var(--w) * .1)/1.02 var(--serif);letter-spacing:-.02em;text-align:center;text-shadow:0 0 calc(var(--g) * 26px) rgba(255,236,190,calc(var(--g) * .45))}
 .name em{color:var(--gold);font-size:1.02em}
 
