@@ -115,6 +115,7 @@ var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
     c.shadowBlur=0;
     mark.parentNode.style.setProperty('--g',clamp01(u*.75+flash*.5).toFixed(2));
+    mark.style.setProperty('--t',sm(.35,.95,k2).toFixed(3));
   }
   function loop(now){
     var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
