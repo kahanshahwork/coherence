@@ -19,13 +19,21 @@
 <main class="board">
   <div class="mark" id="mark">
     <canvas id="ring" aria-hidden="true"></canvas>
-    <h1 class="name"><span>Coherence</span><em>Tech</em></h1>
   </div>
+
+  <h1 class="name" aria-label="Coherence Tech">
+    <span class="co" aria-hidden="true"><b class="L" style="--i:0"><i>C</i></b><b class="L" style="--i:1"><i>o</i></b><b class="L" style="--i:2"><i>h</i></b><b class="L" style="--i:3"><i>e</i></b><b class="L" style="--i:4"><i>r</i></b><b class="L" style="--i:5"><i>e</i></b><b class="L" style="--i:6"><i>n</i></b><b class="L" style="--i:7"><i>c</i></b><b class="L" style="--i:8"><i>e</i></b></span>
+    <span class="tech" aria-hidden="true"><b class="L" style="--i:10"><i>T</i></b><b class="L e" style="--i:11"><i>E</i></b><b class="L" style="--i:12"><i>C</i></b><b class="L" style="--i:13"><i>H</i></b></span>
+  </h1>
 
   <nav class="links" aria-label="Links">
     <button class="link" id="openFilm" type="button">
       <span>Watch the film</span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+    </button>
+    <button class="link" id="openDeck" type="button">
+      <span>Product deck</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6zM14 3.5v4h4M9 12h6M9 15.5h6"/></svg>
     </button>
     <a class="link" href="https://www.paraiq.site" target="_blank" rel="noopener">
       <span>ParaIQ</span>
@@ -43,6 +51,22 @@
   <button class="x" type="button" data-close aria-label="Close">&#10005;</button>
   <div class="film-frame">
     <video id="film" controls playsinline preload="none" poster="assets/video/poster.jpg" src="assets/video/coherence-film.mp4">Your browser can't play this video.</video>
+  </div>
+</div>
+
+<!-- Deck overlay -->
+<div class="ov" id="ovDeck" role="dialog" aria-modal="true" aria-label="Product deck" hidden>
+  <button class="x" type="button" data-close aria-label="Close">&#10005;</button>
+  <div class="deck-frame" id="deckFrame" tabindex="0" role="group" aria-roledescription="carousel" aria-label="ParaIQ product deck slides">
+    <div class="deck-img">
+      <img id="slide" alt="ParaIQ product deck, slide 1 of 18" width="1467" height="825">
+      <button class="nav prev" id="prev" type="button" aria-label="Previous slide">&#8592;</button>
+      <button class="nav next" id="next" type="button" aria-label="Next slide">&#8594;</button>
+    </div>
+    <div class="deck-bar">
+      <span class="count" id="count" aria-live="polite">1 / 18</span>
+      <a class="pill small" href="assets/deck/ParaIQ-Product-Deck.pdf" download>Download PDF</a>
+    </div>
   </div>
 </div>
 

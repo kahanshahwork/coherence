@@ -114,7 +114,7 @@ var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
       c.strokeStyle='rgba(255,243,215,'+bloom.toFixed(3)+')';c.lineWidth=2.2+flash*1.2;c.shadowColor='rgba(255,232,180,.95)';c.shadowBlur=18+30*(u*.6+flash);c.stroke();
     }
     c.shadowBlur=0;
-    mark.style.setProperty('--g',clamp01(u*.75+flash*.5).toFixed(2));
+    mark.parentNode.style.setProperty('--g',clamp01(u*.75+flash*.5).toFixed(2));
   }
   function loop(now){
     var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
