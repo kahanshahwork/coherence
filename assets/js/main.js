@@ -149,8 +149,8 @@ var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   });
   $('#openMail').addEventListener('click',function(){open($('#ovMail'),this)});
 
-  /* Product deck: 18 slides, arrows, keys and swipe */
-  var N=18,di=0,img=$('#slide'),prev=$('#prev'),next=$('#next'),count=$('#count'),frame=$('#deckFrame');
+  /* Product deck: 17 slides, arrows, keys and swipe */
+  var N=17,di=0,img=$('#slide'),prev=$('#prev'),next=$('#next'),count=$('#count'),frame=$('#deckFrame');
   function src(n){return 'assets/deck/slide-'+(n<10?'0':'')+n+'.jpg'}
   function show(k){
     di=Math.max(0,Math.min(N-1,k));
